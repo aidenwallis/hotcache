@@ -12,7 +12,7 @@ type cacheValue struct {
 	value  interface{}
 }
 
-type hotcache struct {
+type Hotcache struct {
 	// Adds thread-safety
 	expiryMutex sync.RWMutex
 	storeMutex  sync.RWMutex
@@ -27,17 +27,8 @@ type hotcache struct {
 	ticker *time.Ticker
 }
 
-type Hotcache interface {
-	Get(key string) (interface{}, bool)
-	Set(key string, value interface{}, expiration time.Duration)
-	SetNX(key string, value interface{}, expiration time.Duration) bool
-	Delete(key string)
-	Has(key string) bool
-	Stop()
-}
-
-func New() Hotcache {
-	h := &hotcache{
+func New() *Hotcache {
+	h := &Hotcache{
 		expiringKeys: make([]string, 0),
 		store:        make(map[string]*cacheValue),
 		ticker:       time.NewTicker(time.Millisecond * 100),
@@ -49,7 +40,7 @@ func New() Hotcache {
 }
 
 // Stop must be called when you are done with the tempcache, as it will stop the garbage collecting ticker.
-func (h *hotcache) Stop() {
+func (h *Hotcache) Stop() {
 	h.ticker.Stop()
 
 	// Clear expiry list
@@ -64,7 +55,7 @@ func (h *hotcache) Stop() {
 }
 
 // Get retrieves a key that isn't expired from cache
-func (h *hotcache) Get(key string) (interface{}, bool) {
+func (h *Hotcache) Get(key string) (interface{}, bool) {
 	h.storeMutex.RLock()
 	val, ok, expired := h.get(key)
 	h.storeMutex.RUnlock()
@@ -79,7 +70,7 @@ func (h *hotcache) Get(key string) (interface{}, bool) {
 }
 
 // Set adds a key to store. Use expiration of 0 for no expiry. Note this will override the key if it's existing.
-func (h *hotcache) Set(key string, value interface{}, expiration time.Duration) {
+func (h *Hotcache) Set(key string, value interface{}, expiration time.Duration) {
 	h.storeMutex.Lock()
 	if expiration != 0 {
 		h.expiryMutex.Lock()
@@ -94,7 +85,7 @@ func (h *hotcache) Set(key string, value interface{}, expiration time.Duration) 
 }
 
 // Has checks if a key is in cache and not expired
-func (h *hotcache) Has(key string) bool {
+func (h *Hotcache) Has(key string) bool {
 	h.storeMutex.RLock()
 	_, ok, expired := h.get(key)
 	h.storeMutex.RUnlock()
@@ -108,14 +99,14 @@ func (h *hotcache) Has(key string) bool {
 	return ok
 }
 
-func (h *hotcache) Delete(key string) {
+func (h *Hotcache) Delete(key string) {
 	h.storeMutex.Lock()
 	delete(h.store, key)
 	h.storeMutex.Unlock()
 }
 
 // get assumes that the mutex lock has already been obtained.
-func (h *hotcache) get(key string) (interface{}, bool, bool) {
+func (h *Hotcache) get(key string) (interface{}, bool, bool) {
 	val, ok := h.store[key]
 
 	if !ok {
@@ -130,7 +121,7 @@ func (h *hotcache) get(key string) (interface{}, bool, bool) {
 }
 
 // set assumes that the mutex lock has already been obtained.
-func (h *hotcache) set(key string, value interface{}, expiration time.Duration) {
+func (h *Hotcache) set(key string, value interface{}, expiration time.Duration) {
 	var expireAt time.Time
 	if expiration != 0 {
 		expireAt = time.Now().Add(expiration)
@@ -146,7 +137,7 @@ func (h *hotcache) set(key string, value interface{}, expiration time.Duration) 
 	}
 }
 
-func (h *hotcache) SetNX(key string, value interface{}, expiration time.Duration) bool {
+func (h *Hotcache) SetNX(key string, value interface{}, expiration time.Duration) bool {
 	h.storeMutex.Lock()
 	defer h.storeMutex.Unlock()
 
@@ -160,7 +151,7 @@ func (h *hotcache) SetNX(key string, value interface{}, expiration time.Duration
 }
 
 // evict removes a key from cache that has expired, assumes a mutex is held
-func (h *hotcache) evict(key string) {
+func (h *Hotcache) evict(key string) {
 	// Note that we don't remove the key from h.expiringKeys, the slice is eventually consistent,
 	// meaning that it's fine that the key exists in there, as randomness should eventually check the
 	// key and remove it, it may not be as efficient on memory, but is far more performant than
@@ -169,14 +160,14 @@ func (h *hotcache) evict(key string) {
 }
 
 // startTicker starts the ticking process for garbage collection on it's own goroutine
-func (h *hotcache) startTicker() {
+func (h *Hotcache) startTicker() {
 	for range h.ticker.C {
 		h.tick()
 	}
 }
 
 // tick is the actual tick action from the ticker that's called per interval
-func (h *hotcache) tick() {
+func (h *Hotcache) tick() {
 	keylength := len(h.expiringKeys)
 	if keylength == 0 {
 		return
@@ -215,7 +206,7 @@ func (h *hotcache) tick() {
 }
 
 // attemptEviction will attempt to evict the key if it has already expired.
-func (h *hotcache) attemptEviction(key string) bool {
+func (h *Hotcache) attemptEviction(key string) bool {
 	h.storeMutex.RLock()
 	value, ok := h.store[key]
 	h.storeMutex.RUnlock()
