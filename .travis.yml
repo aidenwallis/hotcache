@@ -8,6 +8,7 @@ go:
 install:
   - export PATH=${PATH}:${HOME}/gopath/bin
   - go get -v golang.org/x/lint/golint
+  - go get github.com/mattn/goveralls
 
 before_script:
   - go vet ./...
