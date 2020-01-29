@@ -11,6 +11,7 @@ install:
   - go get github.com/mattn/goveralls
 
 before_script:
+  - go get
   - go vet ./...
   - golint .
 
