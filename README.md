@@ -1,4 +1,9 @@
 # hotcache
+
+[![GoDoc](https://godoc.org/github.com/aidenwallis/hotcache?status.svg)](https://godoc.org/github.com/aidenwallis/hotcache)
+[![Build Status](https://travis-ci.org/aidenwallis/hotcache.svg?branch=master)](https://travis-ci.org/aidenwallis/hotcache)
+[![Coverage Status](https://coveralls.io/repos/github/aidenwallis/hotcache/badge.svg?branch=master)](https://coveralls.io/github/aidenwallis/hotcache?branch=master)
+
 A small hash-map cache in Golang designed for small TTL. It's a simple hashmap implementation that allows you to effectively handle TTL on temporary keys. TTL works on last set wins, meaning if you set a longer TTL on a key, it will expire when the new TTL is set.
 
 It invalidates keys by checking 1000 random keys in store every 100ms, as well as does an expiry check per lookup/set.
